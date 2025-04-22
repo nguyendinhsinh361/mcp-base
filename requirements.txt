@@ -1,0 +1,6 @@
+langchain-mcp-adapters
+langgraph>=0.0.26
+langchain-openai>=0.0.1
+python-dotenv>=1.0.0
+uvicorn>=0.25.0
+langchain-google-genai>=0.0.1

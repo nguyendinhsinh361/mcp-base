@@ -1,0 +1,45 @@
+Kiểm tra list các môi trường ảo vừa tạo
+
+conda env list
+
+=======================================
+
+# Tạo môi trường
+conda create -n mcp-base python=3.11 -y
+
+
+# Cài đặt tất cả các thư viện cần thiết cho toàn bộ dự án
+pip install fastapi uvicorn httpx pydantic fastapi-mcp openai google-generativeai motor pymongo python-multipart python-dotenv
+
+# Kích hoạt môi trường ảo
+conda activate mcp-base
+conda deactivate
+conda env remove --name mcp-base
+
+=======================================
+
+# Cài đặt các thư viện cơ bản
+conda install pip
+pip install fastapi uvicorn pydantic python-dotenv aiohttp
+
+# Cài đặt thư viện bảo mật
+pip install 'python-jose[cryptography]' 'passlib[bcrypt]' python-multipart pyjwt
+
+# Cài đặt thư viện cho testing (nếu cần)
+pip install pytest pytest-asyncio
+
+=======================================
+
+# Di chuyển đến thư mục dự án
+cd đường-dẫn-đến-thư-mục-mcp-server
+
+# Cài đặt dự án ở chế độ development
+pip install -e .
+
+=======================================
+
+pip freeze > requirements.txt
+
+=======================================
+
+python -m mcp_server.main
