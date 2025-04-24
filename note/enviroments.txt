@@ -1,3 +1,5 @@
+sudo lsof -i -P | grep LISTEN
+
 Kiểm tra list các môi trường ảo vừa tạo
 
 conda env list
@@ -13,6 +15,10 @@ pip install fastapi uvicorn httpx pydantic fastapi-mcp openai google-generativea
 
 # Kích hoạt môi trường ảo
 conda activate mcp-base
+
+# A2A
+uv pip install .
+
 conda deactivate
 conda env remove --name mcp-base
 

@@ -1,12 +1,15 @@
+"""
+Test runner for MCP Project.
+"""
 import os
 import asyncio
 import argparse
 import sys
 
-# Add the parent directory to sys.path to allow importing from sibling modules
+# Add the parent directory to sys.path to allow importing from project
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import test functions - use relative imports
+# Import test functions
 from tests.test_combined import test_combined_servers
 
 async def run_all_tests(selected_tests=None):
@@ -18,7 +21,11 @@ async def run_all_tests(selected_tests=None):
     """
     # Define the available tests
     tests = {
-        "combined": test_combined_servers
+        "combined": test_combined_servers,
+        # Add additional test functions here as they are implemented
+        # "math": test_math_server,
+        # "weather": test_weather_server,
+        # "github": test_github_server,
     }
     
     # Determine which tests to run
@@ -34,6 +41,7 @@ async def run_all_tests(selected_tests=None):
         tests_to_run = tests
     
     # Run the selected tests
+    results = {}
     for name, test_func in tests_to_run.items():
         print(f"\n\n{'=' * 50}")
         print(f"Running {name.upper()} tests")
@@ -41,11 +49,17 @@ async def run_all_tests(selected_tests=None):
         
         try:
             await test_func()
+            results[name] = "✅ Passed"
         except Exception as e:
             print(f"❌ Error running {name} tests: {e}")
+            results[name] = f"❌ Failed: {e}"
     
+    # Print summary
     print(f"\n\n{'=' * 50}")
-    print("All selected tests completed")
+    print("Test Results Summary")
+    print(f"{'=' * 50}")
+    for name, result in results.items():
+        print(f"{name}: {result}")
     print(f"{'=' * 50}\n")
 
 if __name__ == "__main__":
