@@ -8,6 +8,8 @@ import time
 import signal
 import asyncio
 import multiprocessing
+import subprocess
+import shlex
 from typing import List, Dict, Any
 
 # Add the project root to the path
@@ -21,6 +23,8 @@ log = logger.getChild("main")
 
 # Global flag to track if servers should be running
 running = True
+# Global storage for processes that aren't managed by multiprocessing
+subprocess_processes = []
 
 def run_math_server():
     """Run the Math MCP Server"""
@@ -41,11 +45,44 @@ def run_weather_server():
         log.error(f"Error in Weather Server: {e}")
 
 def run_github_server():
-    """Run the Github MCP Server"""
+    """Run the Github MCP Server using just-aii-guess package"""
     try:
         log.info("Starting Github Server...")
-        # server = GitHubProxyServer()
-        # server.run(transport="sse")
+        
+        # Construct the command
+        cmd = f"npx -y just-aii-guess --stdio \"docker run --rm -i -e GITHUB_PERSONAL_ACCESS_TOKEN={settings.github_token} mcp/github\" --port {settings.github_port} --baseUrl http://{settings.ip_host}:{settings.github_port} --ssePath /sse"
+        
+        # Log the command (optional, good for debugging)
+        log.debug(f"Executing command: {cmd}")
+        
+        # Use Popen to run the command as a subprocess
+        process = subprocess.Popen(
+            shlex.split(cmd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        # Add to global tracking
+        global subprocess_processes
+        subprocess_processes.append(process)
+        
+        # Log the process ID
+        log.info(f"Github Server started with PID: {process.pid}")
+        
+        # Monitor process in a loop until parent signals shutdown
+        while running:
+            if process.poll() is not None:
+                # Process has terminated
+                log.error(f"Github Server terminated unexpectedly with return code {process.returncode}")
+                stdout, stderr = process.communicate()
+                if stdout:
+                    log.debug(f"Github Server stdout: {stdout}")
+                if stderr:
+                    log.error(f"Github Server stderr: {stderr}")
+                break
+            time.sleep(1)
+            
     except Exception as e:
         log.error(f"Error in Github Server: {e}")
 
@@ -55,27 +92,31 @@ def sigint_handler(signum, frame):
     log.info("Received shutdown signal, stopping servers...")
     running = False
 
-def display_startup_message(processes, github_ready=False):
+def display_startup_message(processes, github_process=None):
     """Display a startup message with server information"""
     print("\n" + "=" * 60)
     print("MCP SERVERS RUNNING".center(60))
     print("=" * 60)
     print(f"Weather Server: http://{settings.ip_host}:{settings.weather_port}")
     print(f"Math Server:    http://{settings.ip_host}:{settings.math_port}")
-    print(f"Github Server: http://{settings.ip_host}:{settings.github_port}")
+    print(f"Github Server:  http://{settings.ip_host}:{settings.github_port}")
     
     print("-" * 60)
     print("Running Processes:")
     for i, p in enumerate(processes, 1):
         print(f"  {i}. {p.name} (PID: {p.pid})")
     
+    # Add GitHub process if it exists
+    if github_process and github_process.pid:
+        print(f"  {len(processes)+1}. Github Server (PID: {github_process.pid})")
+        
     print("-" * 60)
     print("Press Ctrl+C to stop all servers")
     print("=" * 60)
 
 def run_all_servers():
     """Run all available MCP servers concurrently"""
-    global running
+    global running, subprocess_processes
     
     # Set up signal handler for graceful shutdown
     signal.signal(signal.SIGINT, sigint_handler)
@@ -101,10 +142,11 @@ def run_all_servers():
     weather_process.start()
     processes.append(weather_process)
     
-    # github_process = multiprocessing.Process(target=run_github_server, name="Github Server")
-    # github_process.daemon = True
-    # github_process.start()
-    # processes.append(github_process)
+    # Start Github Server (using subprocess instead of multiprocessing)
+    github_process = multiprocessing.Process(target=run_github_server, name="Github Server")
+    github_process.daemon = True
+    github_process.start()
+    processes.append(github_process)
     
     # Wait a moment for servers to start
     time.sleep(2)
@@ -127,18 +169,32 @@ def run_all_servers():
     except KeyboardInterrupt:
         log.info("Keyboard interrupt received, shutting down...")
     finally:
-        # Clean up
+        # Clean up multiprocessing processes
         log.info("Stopping all server processes...")
         for p in processes:
             if p.is_alive():
                 log.info(f"Terminating {p.name} (PID: {p.pid})...")
                 p.terminate()
         
+        # Clean up subprocess processes
+        for p in subprocess_processes:
+            if p.poll() is None:  # If process is still running
+                log.info(f"Terminating subprocess (PID: {p.pid})...")
+                p.terminate()
+        
         # Wait for processes to terminate
         for p in processes:
             p.join(timeout=5)
         
-        # Check if any process is still alive
+        # Wait for subprocess processes to terminate
+        for p in subprocess_processes:
+            try:
+                p.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                log.warning(f"Subprocess (PID: {p.pid}) did not terminate gracefully, killing...")
+                p.kill()
+        
+        # Check if any multiprocessing process is still alive
         for p in processes:
             if p.is_alive():
                 log.warning(f"{p.name} (PID: {p.pid}) did not terminate gracefully, killing...")

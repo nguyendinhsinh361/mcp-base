@@ -22,11 +22,11 @@ async def test_combined_servers():
     
     # Create a tool tracker
     tracker = ToolTracker("test_combined")
-    
     # Connect to all MCP servers
     async with CombinedMCPClient() as client:
-        # Get all tools from all servers
+        # Get all tools from all servers        
         tools = client.get_tools()
+        
         
         # Print all available tools
         print("\n📋 Available Tools:")

@@ -49,8 +49,9 @@ class CombinedMCPClient(BaseMCPClient):
                 
             # Initialize the MultiServerMCPClient
             self.client = MultiServerMCPClient(server_config) 
+            print(server_config)
+            
             await self.client.__aenter__()
-            print(self)
             return self
         except Exception as e:
             self.logger.error(f"Failed to connect to MCP servers: {e}")

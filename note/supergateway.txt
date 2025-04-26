@@ -1,7 +1,0 @@
-cd supergateway/
-
-docker build -t supergateway .
-
-docker run -it --rm -p 8000:8000 supergateway \
-    --stdio "npx -y @modelcontextprotocol/server-filesystem /" \
-    --port 8000

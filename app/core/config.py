@@ -37,28 +37,19 @@ class Settings:
         """Get server configuration for multi-client"""
         if self._server_config is None:
             self._server_config = {
-                "math": {
-                    "url": f"http://{self.ip_host}:{self.math_port}/sse",
-                    "transport": "sse",
-                },
-                "weather": {
-                    "url": f"http://{self.ip_host}:{self.weather_port}/sse",
-                    "transport": "sse",
-                },
+                # "math": {
+                #     "url": f"http://{self.ip_host}:{self.math_port}/sse",
+                #     "transport": "sse",
+                # },
+                # "weather": {
+                #     "url": f"http://{self.ip_host}:{self.weather_port}/sse",
+                #     "transport": "sse",
+                # },
                 "github": {
                     "url": f"http://{self.ip_host}:{self.github_port}/sse",
                     "transport": "sse",
                 }
             }
-            
-            # Add GitHub server config if token is available
-            # if self.github_token:
-            #     self._server_config["github"] = {
-            #         "command": "docker",
-            #         "args": ["run", "--rm", "-e", f"GITHUB_PERSONAL_ACCESS_TOKEN={self.github_token}", "-i", "mcp/github"],
-            #         "transport": "stdio",
-            #         "env": {}
-            #     }
                 
         return self._server_config
     
